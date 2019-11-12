@@ -1,12 +1,16 @@
 package com.example.dogsapp.view;
 
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.palette.graphics.Palette;
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
 
 import android.view.LayoutInflater;
@@ -15,7 +19,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.example.dogsapp.R;
+import com.example.dogsapp.databinding.FragmentDetailBinding;
+import com.example.dogsapp.model.DogPalette;
 import com.example.dogsapp.util.Util;
 import com.example.dogsapp.viewmodel.DetailViewModel;
 
@@ -28,29 +37,15 @@ public class DetailFragment extends Fragment {
 
     private int dogUuid;
     private DetailViewModel viewModel;
-
-    @BindView(R.id.dogImage)
-    ImageView dogImage;
-
-    @BindView(R.id.dogName)
-    TextView dogName;
-
-    @BindView(R.id.dogPurpose)
-    TextView dogPurpose;
-
-    @BindView(R.id.dogTemperament)
-    TextView dogTemperament;
-
-    @BindView(R.id.dogLifespan)
-    TextView lifespan;
+    private FragmentDetailBinding binding;
 
     public DetailFragment() { }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_detail, container, false);
-        ButterKnife.bind(this, view);
-        return view;
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        FragmentDetailBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_detail, container, false);
+        this.binding = binding;
+        return binding.getRoot();
     }
 
     @Override
@@ -69,15 +64,33 @@ public class DetailFragment extends Fragment {
     private void observeViewModel() {
         viewModel.dog.observe(this, dogBreed -> {
             if (dogBreed != null && getContext() != null) {
-                dogName.setText(dogBreed.dogBreed);
-                dogPurpose.setText(dogBreed.bredFor);
-                dogTemperament.setText(dogBreed.temperament);
-                lifespan.setText(dogBreed.lifespan);
-
-                if (dogBreed.imageUrl != null) {
-                    Util.loadImage(dogImage, dogBreed.imageUrl, new CircularProgressDrawable(getContext()));
-                }
+                binding.setDogBreed(dogBreed);
+                setupBackgroundColor(dogBreed.imageUrl);
             }
         });
+    }
+
+    private void setupBackgroundColor(String url) {
+        Glide.with(this)
+                .asBitmap()
+                .load(url)
+                .into(new CustomTarget<Bitmap>() {
+                    @Override
+                    public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                        Palette.from(resource)
+                                .generate(palette -> {
+                                    if (palette != null){
+                                        int intColor = palette.getLightMutedSwatch().getRgb();
+                                        DogPalette myPalette = new DogPalette(intColor);
+                                        binding.setPalette(myPalette);
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void onLoadCleared(@Nullable Drawable placeholder) {
+
+                    }
+                });
     }
 }
