@@ -12,6 +12,7 @@ import com.example.dogsapp.model.DogBreed;
 import com.example.dogsapp.model.DogDao;
 import com.example.dogsapp.model.DogDatabase;
 import com.example.dogsapp.model.DogsApiService;
+import com.example.dogsapp.util.NotificationsHelper;
 import com.example.dogsapp.util.SharedPreferencesHelper;
 
 import java.util.ArrayList;
@@ -37,7 +38,6 @@ public class ListViewModel extends AndroidViewModel {
     private AsyncTask<Void, Void, List<DogBreed>> retrieveTask;
 
     private SharedPreferencesHelper prefHelper = SharedPreferencesHelper.getInstance(getApplication());
-    private long refreshTime = 5 * 60 * 1000 * 1000 * 1000L; // Nano Seconds
 
     public ListViewModel(@NonNull Application application) {
         super(application);
@@ -46,6 +46,8 @@ public class ListViewModel extends AndroidViewModel {
     public void refresh() {
         long updatedTime = prefHelper.getUpdateTime();
         long currentTime = System.nanoTime();
+        // Nano Seconds
+        long refreshTime = 5 * 60 * 1000 * 1000 * 1000L;
         if (updatedTime != 0 && currentTime - updatedTime < refreshTime) {
             fetchFromDatabase();
         } else {
@@ -75,6 +77,7 @@ public class ListViewModel extends AndroidViewModel {
                                 insertTask = new InsertDogsTask();
                                 insertTask.execute(dogBreeds);
                                 Toast.makeText(getApplication(), "Dogs retrieved from endpoint", Toast.LENGTH_SHORT).show();
+                                NotificationsHelper.getInstance(getApplication()).createNotification();
                             }
 
                             @Override
